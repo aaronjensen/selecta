@@ -313,84 +313,55 @@ class Score
     end
 
     # Find the length of the shortest substring matching the given characters.
-    def compute_match_length(choice, query)
-      # Check for exact match
-      return query.length if choice.index(query)
+    def compute_match_length(string, search)
+      search = search.codepoints
+      search_length = search.length
 
-      query_chars = query.chars
+      string = string.codepoints
+      string_length = string.length
 
-      # Extract longest possible substring
-      first_index = choice.index(query_chars.first)
-      last_index = choice.rindex(query_chars.last)
+      # TODO alloc these once
+      score_buffer = Array.new(search_length, Float::INFINITY)
+      position_buffer = Array.new(search_length, 0)
 
-      # See if a match is even possible
-      return unless first_index && last_index && first_index < last_index
-      choice = choice[first_index..last_index]
+      return 0 if search_length == 0
 
-      # Keep track of lowest score for each index in our choice.
-      # It starts out at 1 for each of the 0th characters.
-      scores = {}
-      each_index_of_char(choice, query_chars[0]) do |index|
-        scores[index] = 1
-      end
+      highest_matchable = 0
+      0.upto(string_length - 1) do |position|
+        highest_matchable.downto(0) do |ix|
+          next unless string[position] == search[ix]
+          old_score = nil
+          new_score = nil
 
-      max = choice.length + 1
-      query_chars.drop(1).each do |char|
-        return if scores.empty?
-        new_scores = Hash.new(max)
-        start = scores.keys.min + 1
+          if ix == search_length - 1
+            old_score = score_buffer[ix]
+          else
+            old_score = score_buffer[ix] + position - position_buffer[ix]
+          end
 
-        each_index_of_char(choice, char, start) do |char_index, boundary|
-          scores.each do |index, score|
-            next unless char_index > index
+          if ix == 0
+            new_score = 1
+          elsif is_after_boundary?(string, position)
+            new_score = score_buffer[ix - 1] + 1
+          else
+            new_score = score_buffer[ix - 1] + position - position_buffer[ix - 1]
+          end
 
-            score_delta = boundary ? 1 : (char_index - index)
-            new_score = score + score_delta
-            new_scores[char_index] = new_score if new_score < new_scores[char_index]
+          if new_score < old_score
+            score_buffer[ix] = new_score
+            position_buffer[ix] = position
+            highest_matchable = [[highest_matchable, ix + 1].max, search_length - 1].min
           end
         end
-
-        scores = new_scores
       end
 
-      scores.values.min
+      score_buffer[search_length - 1]
     end
 
-    def each_index_of_char(str, char, start = 0)
-      index = str.index(char, start)
-
-      while index
-        prev = index - 1
-        boundary = start > 0 && str.index(/\W/, prev) == prev
-        yield index, boundary
-
-        index = str.index(char, index + 1)
-      end
-    end
-
-    # Find all occurrences of the character in the string, returning their indexes.
-    def find_char_in_string(string, char)
-      index = 0
-      indexes = []
-      while index
-        index = string.index(char, index)
-        if index
-          indexes << index
-          index += 1
-        end
-      end
-      indexes
-    end
-
-    # Find each of the characters in the string, moving strictly left to right.
-    def find_end_of_match(string, chars, first_index)
-      last_index = first_index
-      chars.each do |this_char|
-        index = string.index(this_char, last_index + 1)
-        return nil unless index
-        last_index = index
-      end
-      last_index
+    def is_after_boundary?(string, position)
+      return false if position == 0
+      cc = string[position - 1]
+      !((cc > 47 && cc < 58) || (cc > 64 && cc < 91) || (cc > 96 && cc < 123))
     end
   end
 end
