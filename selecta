@@ -347,6 +347,7 @@ class Score
             end
 
             if new_score < old_score
+              return search_length if ix == max_matchable && new_score == search_length
               score_buffer[ix] = new_score
               position_buffer[ix] = position
               highest_matchable = ix < highest_matchable ? highest_matchable : ix;
