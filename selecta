@@ -279,8 +279,10 @@ class Search
   private
 
   def compute_matches
+    score_buffer = Array.new(@query.length)
+    position_buffer = Array.new(@query.length)
     @choices.map do |choice|
-      [choice, Score.score(choice, @query)]
+      [choice, Score.score(choice, @query, score_buffer, position_buffer)]
     end.select do |choice, score|
       score > 0.0
     end.sort_by do |choice, score|
@@ -295,14 +297,14 @@ end
 
 class Score
   class << self
-    def score(choice, query)
+    def score(choice, query, score_buffer = Array.new(query.length), position_buffer = Array.new(query.length))
       return 1.0 if query.length == 0
       return 0.0 if choice.length == 0
 
       choice = choice.downcase
       query = query.downcase
 
-      match_length = compute_match_length(choice, query)
+      match_length = compute_match_length(choice, query, score_buffer, position_buffer)
       return 0.0 unless match_length
 
       # Penalize longer matches.
@@ -313,16 +315,15 @@ class Score
     end
 
     # Find the length of the shortest substring matching the given characters.
-    def compute_match_length(string, search)
+    def compute_match_length(string, search, score_buffer, position_buffer)
       search = search.codepoints
       search_length = search.length
 
       string = string.codepoints
       string_length = string.length
 
-      # TODO alloc these once
-      score_buffer = Array.new(search_length, Float::INFINITY)
-      position_buffer = Array.new(search_length, 0)
+      score_buffer.fill(Float::INFINITY)
+      position_buffer.fill(0)
 
       return 0 if search_length == 0
 
