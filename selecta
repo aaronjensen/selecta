@@ -318,6 +318,7 @@ class Score
     def compute_match_length(string, search, score_buffer, position_buffer)
       search = search.codepoints
       search_length = search.length
+      max_matchable = search_length - 1;
 
       string = string.codepoints
       string_length = string.length
@@ -353,7 +354,8 @@ class Score
             if new_score < old_score
               score_buffer[ix] = new_score
               position_buffer[ix] = position
-              highest_matchable = [[highest_matchable, ix + 1].max, search_length - 1].min
+              highest_matchable = ix < highest_matchable ? highest_matchable : ix;
+              highest_matchable = highest_matchable > max_matchable ? max_matchable : highest_matchable;
             end
           end
           ix -= 1
