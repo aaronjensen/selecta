@@ -1,36 +1,40 @@
 require_relative "spec/spec_helper"
 
+def score(string, search)
+  Score.score(string.codepoints, search.codepoints)
+end
+
 ready "scoring" do
   go "non-matching" do
-    Score.score("x" * 16, "y" * 16)
+    score("x" * 16, "y" * 16)
   end
 
   go "matching exactly" do
-    Score.score("x" * 16, "x" * 16)
+    score("x" * 16, "x" * 16)
   end
 
   go "matching broken up" do
-    Score.score("xy" * 20, "x" * 10)
+    score("xy" * 20, "x" * 10)
   end
 
   go "overlapping matches" do
-    Score.score("x" * 40, "x" * 10)
+    score("x" * 40, "x" * 10)
   end
 
   go "almost overlapping matches" do
-    Score.score(("x" * 9 + "y") * 4, "x" * 10)
+    score(("x" * 9 + "y") * 4, "x" * 10)
   end
 
   go "paths, non-matching" do
-    PATHS.each { |choice| Score.score(choice, "x" * 16) }
+    PATHS.each { |choice| score(choice, "x" * 16) }
   end
 
   go "paths, empty query" do
-    PATHS.each { |choice| Score.score(choice, "") }
+    PATHS.each { |choice| score(choice, "") }
   end
 
   go "paths, trivial query" do
-    PATHS.each { |choice| Score.score(choice, "a") }
+    PATHS.each { |choice| score(choice, "a") }
   end
 end
 

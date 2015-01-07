@@ -170,7 +170,7 @@ class Configuration < Struct.new(:visible_choices, :initial_search, :choices)
       else
         utf16 = choice.encode('UTF-16', 'UTF-8', :invalid => :replace, :replace => '')
         utf16.encode('UTF-8', 'UTF-16')
-      end.strip
+      end.strip.downcase.codepoints
     end
   end
 end
@@ -281,8 +281,9 @@ class Search
   def compute_matches
     score_buffer = Array.new(@query.length)
     position_buffer = Array.new(@query.length)
+    query = @query.downcase.codepoints
     @choices.map do |choice|
-      [choice, Score.score(choice, @query, score_buffer, position_buffer)]
+      [choice, Score.score(choice, query, score_buffer, position_buffer)]
     end.select do |choice, score|
       score > 0.0
     end.sort_by do |choice, score|
@@ -301,9 +302,6 @@ class Score
       return 1.0 if query.length == 0
       return 0.0 if choice.length == 0
 
-      choice = choice.downcase
-      query = query.downcase
-
       match_length = compute_match_length(choice, query, score_buffer, position_buffer)
       return 0.0 unless match_length
 
@@ -316,11 +314,8 @@ class Score
 
     # Find the length of the shortest substring matching the given characters.
     def compute_match_length(string, search, score_buffer, position_buffer)
-      search = search.codepoints
       search_length = search.length
       max_matchable = search_length - 1;
-
-      string = string.codepoints
       string_length = string.length
 
       score_buffer.fill(Float::INFINITY)
