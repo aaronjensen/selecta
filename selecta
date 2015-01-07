@@ -328,32 +328,37 @@ class Score
       return 0 if search_length == 0
 
       highest_matchable = 0
-      0.upto(string_length - 1) do |position|
-        highest_matchable.downto(0) do |ix|
-          next unless string[position] == search[ix]
-          old_score = nil
-          new_score = nil
+      position = 0
+      while position < string_length - 1 do
+        ix = highest_matchable
+        while ix >= 0 do
+          if string[position] == search[ix]
+            old_score = nil
+            new_score = nil
 
-          if ix == search_length - 1
-            old_score = score_buffer[ix]
-          else
-            old_score = score_buffer[ix] + position - position_buffer[ix]
-          end
+            if ix == search_length - 1
+              old_score = score_buffer[ix]
+            else
+              old_score = score_buffer[ix] + position - position_buffer[ix]
+            end
 
-          if ix == 0
-            new_score = 1
-          elsif is_after_boundary?(string, position)
-            new_score = score_buffer[ix - 1] + 1
-          else
-            new_score = score_buffer[ix - 1] + position - position_buffer[ix - 1]
-          end
+            if ix == 0
+              new_score = 1
+            elsif is_after_boundary?(string, position)
+              new_score = score_buffer[ix - 1] + 1
+            else
+              new_score = score_buffer[ix - 1] + position - position_buffer[ix - 1]
+            end
 
-          if new_score < old_score
-            score_buffer[ix] = new_score
-            position_buffer[ix] = position
-            highest_matchable = [[highest_matchable, ix + 1].max, search_length - 1].min
+            if new_score < old_score
+              score_buffer[ix] = new_score
+              position_buffer[ix] = position
+              highest_matchable = [[highest_matchable, ix + 1].max, search_length - 1].min
+            end
           end
+          ix -= 1
         end
+        position += 1
       end
 
       score_buffer[search_length - 1]
